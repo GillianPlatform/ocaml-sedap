@@ -1,0 +1,36 @@
+opam-version: "2.0"
+synopsis: "SEDAP"
+description: """
+An extension of the Debug Adapter Protocol for debugging symbolic execution.
+"""
+maintainer: "Nat Karmios <n.karmios@ic.ac.uk>"
+authors: "Nat Karmios <n.karmios@ic.ac.uk>"
+license: "MIT"
+homepage: "https://github.com/hackwaly/ocaml-dap"
+bug-reports: "https://github.com/hackwaly/ocaml-dap/issues"
+dev-repo: "git+https://github.com/hackwaly/ocaml-dap.git"
+doc: "https://hackwaly.github.io/ocaml-dap/"
+depends: [
+  "ocaml" {>= "4.08"}
+  "dune" {>= "2.7"}
+  "dap"
+  "yojson"
+  "ppx_here"
+  "ppx_deriving"
+  "ppx_deriving_yojson"
+  "ppx_expect"
+  "lwt"
+  "lwt_ppx"
+  "lwt_react"
+  "react"
+  "angstrom"
+  "angstrom-lwt-unix"
+  "logs"
+]
+build: [
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
+]
+pin-depends: [
+  "dap.~dev" "git+https://github.com/GillianPlatform/ocaml-dap#3061b24a40b1e449f74d9ea1a13fe4bed5ab0ebb"
+]

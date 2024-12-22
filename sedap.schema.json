@@ -1,0 +1,198 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"title": "SEDAP",
+	"description": "An extension of the Debug Adapter Protocol for debugging symbolic execution.",
+	"type": "object",
+
+  "definitions": {
+    "BranchCase": {
+      "description": "The type of a branch case is arbitrary and implementation-dependent.\nThe UI should essentially treat this as a black box to pass back to the debugger when calling \"stepSpecific\"."
+    },
+    "MapNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "display": {
+          "type": "string"
+        },
+        "submaps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "next": { "$ref": "#/definitions/MapNodeNext" },
+        "ext": {
+          "description": "Optional, implementation-specific data of arbitrary type."
+        }
+      },
+      "required": [ "id", "display" ]
+    },
+    "MapNodeNext": {
+      "_ocaml_variant": true,
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [ "single" ]
+            },
+            "id": {
+              "type": ["string", "null"]
+            }
+          },
+          "required": [ "kind", "id" ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [ "branch" ]
+            },
+            "cases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "minProperties": 1,
+                "properties": {
+                  "branchLabel": {
+                    "type": "string"
+                  },
+                  "branchCase": { "$ref": "#/definitions/BranchCase" },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [ "branchLabel", "branchCase", "id" ]
+              }
+            }
+          },
+          "required": [ "kind", "cases" ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [ "final" ]
+            }
+          },
+          "required": [ "kind" ]
+        }
+      ]
+    },
+    "MapUpdateEvent": {
+			"allOf": [ { "$ref": "dapSchema.json#/definitions/Event" }, {
+				"type": "object",
+				"description": "The event indicates that the execution map has been updated with new information.\nThis is typically sent alongside the \"stopped\" event.",
+				"properties": {
+					"event": {
+						"type": "string",
+						"enum": [ "mapUpdate" ]
+					},
+					"body": {
+						"type": "object",
+						"properties": {
+							"nodes": {
+                "type": "object",
+                "description": "An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID.",
+                "additionalProperties": {
+                  "oneOf": [
+                    { "$ref": "#/definitions/MapNode" },
+                    { "type": "null" }
+                  ]
+                }
+              },
+              "roots": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "currentStep": {
+                "type": ["string", "null"]
+              },
+              "ext": {}
+						}
+					}
+				},
+				"required": [ "event", "body" ]
+			}]
+		},
+
+    "StepSpecificRequest": {
+			"allOf": [ { "$ref": "dapSchema.json#/definitions/Request" }, {
+				"type": "object",
+				"description": "The request starts the debugger to step from a specific point in execution, in a specific direction in the case of branching.\nWhen there is no branch, this is equivalent to \"jump\" followed by \"stepIn\".\nErrors if a branch is present and no branch case is supplied, or a branch case is supplied where ther is no branch.",
+				"properties": {
+					"command": {
+						"type": "string",
+						"enum": [ "stepSpecific" ]
+					},
+					"arguments": {
+						"$ref": "#/definitions/StepSpecificArguments"
+					}
+				},
+				"required": [ "command", "arguments"  ]
+			}]
+		},
+		"StepSpecificArguments": {
+			"type": "object",
+			"description": "Arguments for 'stepSpecific' request.",
+			"properties": {
+        "stepId": {
+          "type": "string",
+          "description": "The id of the execution node to step from."
+        },
+				"branchCase": {
+          "description": "The branch case to step in.",
+          "$ref": "#/definitions/BranchCase"
+        }
+			},
+      "required": [ "stepId" ]
+		},
+		"StepSpecificResponse": {
+			"allOf": [ { "$ref": "dapSchema.json#/definitions/Response" }, {
+				"type": "object",
+				"description": "Response to 'stepSpecific' request. This is just an acknowledgement, so no body field is required."
+			}]
+		},
+
+    "JumpRequest": {
+			"allOf": [ { "$ref": "dapSchema.json#/definitions/Request" }, {
+				"type": "object",
+				"description": "The request causes the exeuction state to jump to another (existing) point in execution.",
+				"properties": {
+					"command": {
+						"type": "string",
+						"enum": [ "jump" ]
+					},
+					"arguments": {
+						"$ref": "#/definitions/JumpArguments"
+					}
+				},
+				"required": [ "command", "arguments"  ]
+			}]
+		},
+		"JumpArguments": {
+			"type": "object",
+			"description": "Arguments for 'jump'' request.",
+			"properties": {
+        "stepId": {
+          "type": "string",
+          "description": "The id of the execution node to jump to."
+        }
+			}
+		},
+		"JmpResponse": {
+			"allOf": [ { "$ref": "dapSchema.json#/definitions/Response" }, {
+				"type": "object",
+				"description": "Response to 'jump' request. This is just an acknowledgement, so no body field is required."
+			}]
+		}
+  }
+}

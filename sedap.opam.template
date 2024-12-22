@@ -1,0 +1,3 @@
+pin-depends: [
+  "dap.~dev" "git+https://github.com/GillianPlatform/ocaml-dap#3061b24a40b1e449f74d9ea1a13fe4bed5ab0ebb"
+]
