@@ -6,29 +6,8 @@
 
   "definitions": {
     "BranchCase": {
-      "description": "The type of a branch case is arbitrary and implementation-dependent.\nThe UI should essentially treat this as a black box to pass back to the debugger when calling \"stepSpecific\"."
-    },
-    "MapNode": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "display": {
-          "type": "string"
-        },
-        "submaps": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "next": { "$ref": "#/definitions/MapNodeNext" },
-        "ext": {
-          "description": "Optional, implementation-specific data of arbitrary type."
-        }
-      },
-      "required": [ "id", "display" ]
+      "description": "The type of a branch case is arbitrary and implementation-dependent.\nThe UI should essentially treat this as a black box to pass back to the debugger when calling \"stepSpecific\".",
+      "_ocaml_any": true
     },
     "MapNodeNext": {
       "_ocaml_variant": true,
@@ -85,6 +64,29 @@
         }
       ]
     },
+    "MapNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "display": {
+          "type": "string"
+        },
+        "submaps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "next": { "$ref": "#/definitions/MapNodeNext" },
+        "ext": {
+          "description": "Optional, implementation-specific data of arbitrary type.",
+          "_ocaml_any": true
+        }
+      },
+      "required": [ "id", "display" ]
+    },
     "MapUpdateEvent": {
 			"allOf": [ { "$ref": "dapSchema.json#/definitions/Event" }, {
 				"type": "object",
@@ -116,7 +118,9 @@
               "currentStep": {
                 "type": ["string", "null"]
               },
-              "ext": {}
+              "ext": {
+                "_ocaml_any": true
+              }
 						}
 					}
 				},

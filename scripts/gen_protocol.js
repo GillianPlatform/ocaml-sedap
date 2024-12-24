@@ -4,11 +4,19 @@ const { hideBin } = require('yargs/helpers')
 const argv = yargs(hideBin(process.argv)).argv
 const _ = require('lodash');
 
-const schema = JSON.parse(Fs.readFileSync(argv._[0]));
+const arg0 = argv._[0]?.trim();
+if (arg0 !== 'ml' && arg0 !== 'mli')
+  throw new Error('First argument should be either \'ml\' or \'mli\'');
+const mli = arg0 === 'mli';
+const schema = JSON.parse(Fs.readFileSync(argv._[1]));
+
+function stripRef(ref) {
+  return ref.replace(/^#\/definitions\//, '');
+}
 
 function resolveDef(def) {
   if (def != null && def.$ref) {
-    return schema.definitions[def.$ref.replace(/^#\/definitions\//, '')];
+    return schema.definitions[stripRef(def.$ref)];
   }
   return def;
 }
@@ -17,6 +25,7 @@ const types = {};
 const events = {};
 const requests = {};
 
+// Sort schema definitions into events, requests, and misc. types
 for (let key of Object.keys(schema.definitions)) {
   let def = schema.definitions[key];
   if (key.endsWith('Event') && key !== 'Event') {
@@ -45,8 +54,15 @@ function emit(str) {
 
 emit(`(** ${schema.description} *)\n`);
 emit(`(* Auto-generated from json schema. Do not edit manually. *)\n\n`);
-emit(`open Util\n\n`);
-emit(`include Debug_protocol_types\n\n`);
+if (mli) {
+  emit(`include module type of Debug_protocol_types\n\n`);
+  emit(`module String_map : Map.S with type key = String\n\n`);
+} else {
+  emit(`open Util\n\n`);
+  emit(`include Debug_protocol_types\n\n`);
+  emit(`module String_map = Map.Make(String)\n\n`);
+}
+
 
 const toOcamlName = (() => {
   function toSnakeCase(key) {
@@ -90,7 +106,7 @@ let emitLocalModule = () => {
 };
 
 function emitModule(emit, modId, f) {
-  emit(`module ${modId} = struct\n`);
+  emit(mli ? `module ${modId} : sig\n` : `module ${modId} = struct\n`);
   const prevEmitLocalModule = emitLocalModule;
   emitLocalModule = (localModId, f) => {
     withIndent(emit, (emit) => {
@@ -139,6 +155,10 @@ function genType(def, prop, parentDef) {
     }
   }
 
+  if (mli && def.type == 'object' && def.additionalProperties != null) {
+    return `String_opt_dict.t`;
+  }
+
   if (_.isEqual(_.sortBy(def.type), ['integer', 'string'])) {
     return 'Int_or_string.t';
   }
@@ -154,6 +174,26 @@ function genType(def, prop, parentDef) {
     return 'Any.t';
   }
 
+  if (def.$ref) {
+    ref = stripRef(def.$ref);
+    if (ref !== currentTypeModuleName && types[stripRef(def.$ref)]) {
+      return `${toOcamlName(ref, true)}.t`;
+    }
+  }
+
+  if (def._ocaml_any) {
+    return 'Yojson.Safe.t';
+  }
+
+  if (def.oneOf && def.oneOf.length === 2) {
+    let inner;
+    if (def.oneOf[0].type === 'null') inner = def.oneOf[1];
+    if (def.oneOf[1].type === 'null') inner = def.oneOf[0];
+    if (inner) {
+      return `${genType(inner, prop, parentDef)} option`;
+    }
+  }
+
   switch (def.type) {
     case 'string': return 'string';
     case 'boolean': return 'bool';
@@ -164,7 +204,7 @@ function genType(def, prop, parentDef) {
       return `${genType(itemType, prop)} list`;
     }
     default:
-      throw new Error('Assertion failed');
+      throw new Error(`Unhandled type ${def.type}\n${JSON.stringify(def, null, 2)}`);
   }
 }
 
@@ -178,15 +218,18 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
   emit(`type t =`);
   if (!isEmitTypeModule && Object.entries(types).some(it => it[1] === def)) {
     const typeName = Object.entries(types).find(it => it[1] === def)[0];
-    emit(` ${toOcamlName(typeName)}.t\n`);
+    emit(mli ? ` ${toOcamlName(typeName)}.t` : ` ${toOcamlName(typeName)}.t\n`);
     emit(`[@@deriving yojson]`);
   } else if (def != null && def.type === 'object' && def.additionalProperties != null) {
     if (_.isEqual(_.sortBy(def.additionalProperties.type), ['null', 'string'])) {
       emit(` String_opt_dict.t\n`);
     } else if (def.additionalProperties.type === 'string') {
       emit(` String_dict.t\n`);
+    } else if (def.additionalProperties === true) {
+      emit(` Yojson.Safe.t\n`)
     } else {
-      throw new Error('Assertion failed');
+      const typExp = genType(def.additionalProperties, 'value', def);
+      emit(` ${typExp} String_map.t`)
     }
     emit(`[@@deriving yojson]`);
   } else if (def == null || (def.type === 'object' && _.isEmpty(def.properties))) {
@@ -214,8 +257,7 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
     }
     emit(` {\n`);
     withIndent(emit, (emit) => {
-      for (const [prop, propDef0] of Object.entries(objDef.properties || {})) {
-        const propDef = resolveDef(propDef0);
+      for (const [prop, propDef] of Object.entries(objDef.properties || {})) {
         const mlprop = toOcamlName(prop);
         emit(mlprop);
         emit(` : `);
@@ -242,9 +284,9 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
           emit(` [@default None]`);
         }
         emit(`;`);
-        if (propDef0.description) {
+        if (propDef.description) {
           emit(' ');
-          emit(genDoc(propDef0.description));
+          emit(genDoc(propDef.description));
         }
         emit(`\n`);
       }
@@ -268,21 +310,49 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
       emit(`  | Custom of string\n`);
     }
     emit(`\n`);
-    emit(`let of_yojson = function\n`);
-    for (const str of strs) {
-      emit(`  | \`String "${str}" -> Ok ${toOcamlName(str.replace(/ /g, '_'), true)}\n`);
+    if (mli) {
+      emit(`include JSONABLE with type t := t`);
+    } else {
+      emit(`let of_yojson = function\n`);
+      for (const str of strs) {
+        emit(`  | \`String "${str}" -> Ok ${toOcamlName(str.replace(/ /g, '_'), true)}\n`);
+      }
+      if (isOpen) {
+        emit(`  | \`String str -> Ok (Custom str)`);
+      }
+      emit(`  | _ -> Error (print_exn_at_loc [%here])\n\n`);
+      emit(`let to_yojson = function\n`);
+      for (const str of strs) {
+        emit(`  | ${toOcamlName(str.replace(/ /g, '_'), true)} -> \`String "${str}"\n`);
+      }
+      if (isOpen) {
+        emit(`  | Custom str -> \`String str`);
+      }
     }
-    if (isOpen) {
-      emit(`  | \`String str -> Ok (Custom str)`);
+  } else if (def._ocaml_variant) {
+    for (const variant of def.oneOf) {
+      if (variant.type === 'object' && variant.properties?.kind?.type === 'string') {
+        if (variant.properties.kind.enum.length === 1) {
+          const kind = variant.properties.kind.enum[0];
+          const fields = [];
+          for (const [prop, propDef] of Object.entries(variant.properties)) {
+            if (prop === 'kind') continue;
+            fields.push(`      ${toOcamlName(prop, false)} : ${genType(propDef, prop, variant)} [@key "${prop}"]`);
+          }
+          let fields_ = '';
+          if (fields.length > 0) {
+            fields_ = ` of {\n${fields.join('\n')}\n    }`;
+          }
+          emit(`\n  | ${toOcamlName(kind, true)}${fields_} [@name "${kind}"]`);
+          continue;
+        }
+      }
+      throw new Error(`Variant has invalid structure\n${JSON.stringify(variant, null, 2)}`);
     }
-    emit(`  | _ -> Error (print_exn_at_loc [%here])\n\n`);
-    emit(`let to_yojson = function\n`);
-    for (const str of strs) {
-      emit(`  | ${toOcamlName(str.replace(/ /g, '_'), true)} -> \`String "${str}"\n`);
-    }
-    if (isOpen) {
-      emit(`  | Custom str -> \`String str`);
-    }
+  } else if (def._ocaml_any) {
+    emit(' Yojson.Safe.t \n');
+  } else {
+    throw new Error(`Failed to emit type decl\n${JSON.stringify(def, null, 2)}`);
   }
   emit(`\n`);
 }
@@ -311,7 +381,7 @@ function emitEventModule(event, {doc, body}) {
       emit('\n');
     }
     emitModule(emit, toOcamlName(`${event}_event`, true), (emit) => {
-      emit(`let type_ = "${event}"\n`);
+      emit(mli ? `val type_ : string\n` : `let type_ = "${event}"\n`);
       emit('\n');
       emitModule(emit, toOcamlName('Payload', true), (emit) => {
         emitTypeDecl(emit, body);
@@ -328,7 +398,7 @@ function emitRequestModule(command, {doc, arguments, responseBody}) {
       emit('\n');
     }
     emitModule(emit, toOcamlName(`${command}_command`, true), (emit) => {
-      emit(`let type_ = "${command}"\n`);
+      emit(mli ? `val type_ : string\n` : `let type_ = "${command}"\n`);
       emit('\n');
       emitModule(emit, toOcamlName('Arguments', true), (emit) => {
         emitTypeDecl(emit, arguments);
