@@ -1,17 +1,17 @@
-; (library
-;  (name debug_protocol)
-;  (public_name dap.types)
-;  (preprocess (pps ppx_deriving_yojson ppx_here ppx_deriving.make))
-;  (libraries yojson ppx_deriving_yojson.runtime))
+(library
+ (name sedap_types)
+ (public_name sedap.types)
+ (preprocess (pps ppx_deriving_yojson ppx_here ppx_deriving.make))
+ (libraries yojson ppx_deriving_yojson.runtime fmt dap.types dap.rpc_lwt))
 
 (rule
-  (target debug_protocol.ml)
+  (target sedap_types.ml)
   (mode (promote (until-clean)))
   (deps (:json ../../sedap.schema.json) (:script ../../scripts/gen_protocol.js))
   (action (with-stdout-to %{target} (run node %{script} -- ml %{json}))))
 
 (rule
-  (target debug_protocol.mli)
+  (target sedap_types.mli)
   (mode (promote (until-clean)))
   (deps (:json ../../sedap.schema.json) (:script ../../scripts/gen_protocol.js))
   (action (with-stdout-to %{target} (run node %{script} -- mli %{json}))))

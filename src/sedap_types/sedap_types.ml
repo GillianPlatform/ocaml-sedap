@@ -1,16 +1,13 @@
 (** An extension of the Debug Adapter Protocol for debugging symbolic execution. *)
 (* Auto-generated from json schema. Do not edit manually. *)
 
-open Util
-
-include Debug_protocol_types
-
-module String_map = Map.Make(String)
+include Debug_protocol
+open Utils
 
 module Branch_case = struct
   (** The type of a branch case is arbitrary and implementation-dependent.
   The UI should essentially treat this as a black box to pass back to the debugger when calling "stepSpecific". *)
-  type t = Yojson.Safe.t 
+  type t = Yojson.Safe.t [@@deriving yojson]
 
 end
 
@@ -26,12 +23,42 @@ module Map_node_next = struct
 
   type t =
     | Single of {
-        id : string option [@key "id"]
+        id : string option
       } [@name "single"]
     | Branch of {
-        cases : Cases.t list [@key "cases"]
+        cases : Cases.t list
       } [@name "branch"]
     | Final [@name "final"]
+
+    let to_yojson = function
+      | Single { id } -> `Assoc [
+          ("kind", `String "single");
+          ("id", [%to_yojson: string option] id);
+        ]
+      | Branch { cases } -> `Assoc [
+          ("kind", `String "branch");
+          ("cases", [%to_yojson: Cases.t list] cases);
+        ]
+      | Final  -> `Assoc [
+          ("kind", `String "final");
+        ]
+
+    let of_yojson json =
+      let* obj = obj_of_yojson json in
+      match List.assoc_opt "type" obj with
+      | Some (`String "single") ->
+          let* _id = key_of_yojson "id" [%of_yojson: string option] obj in
+        Ok (Single {
+            id = _id;
+        })
+      | Some (`String "branch") ->
+          let* _cases = key_of_yojson "cases" [%of_yojson: Cases.t list] obj in
+        Ok (Branch {
+            cases = _cases;
+        })
+      | Some (`String "final") ->
+        Ok (Final)
+      | _ -> Error "invalid variant kind"
 end
 
 module Map_node = struct
@@ -51,7 +78,8 @@ module Map_update_event = struct
   module Payload = struct
     module Nodes = struct
       (** An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID. *)
-      type t = Map_node.t option String_map.t[@@deriving yojson]
+      type t = Map_node.t option String_map.t
+      [@@deriving yojson]
     end
 
     module Roots = struct

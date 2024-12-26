@@ -1,14 +1,14 @@
 (** An extension of the Debug Adapter Protocol for debugging symbolic execution. *)
 (* Auto-generated from json schema. Do not edit manually. *)
 
-include module type of Debug_protocol_types
+include module type of Debug_protocol
 
-module String_map : Map.S with type key = String
+open Utils
 
 module Branch_case : sig
   (** The type of a branch case is arbitrary and implementation-dependent.
   The UI should essentially treat this as a black box to pass back to the debugger when calling "stepSpecific". *)
-  type t = Yojson.Safe.t 
+  type t = Yojson.Safe.t [@@deriving yojson]
 
 end
 
@@ -24,12 +24,14 @@ module Map_node_next : sig
 
   type t =
     | Single of {
-        id : string option [@key "id"]
+        id : string option
       } [@name "single"]
     | Branch of {
-        cases : Cases.t list [@key "cases"]
+        cases : Cases.t list
       } [@name "branch"]
     | Final [@name "final"]
+  [@@deriving yojson]
+
 end
 
 module Map_node : sig
@@ -49,7 +51,8 @@ module Map_update_event : sig
   module Payload : sig
     module Nodes : sig
       (** An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID. *)
-      type t = Map_node.t option String_map.t[@@deriving yojson]
+      type t = Map_node.t option String_map.t
+      [@@deriving yojson]
     end
 
     module Roots : sig
