@@ -7,17 +7,15 @@
   "definitions": {
     "BranchCase": {
       "description": "The type of a branch case is arbitrary and implementation-dependent.\nThe UI should essentially treat this as a black box to pass back to the debugger when calling \"stepSpecific\".",
-      "_ocaml_any": true
+      "_any": true
     },
     "MapNodeNext": {
-      "_ocaml_variant": true,
       "oneOf": [
         {
           "type": "object",
           "properties": {
             "kind": {
-              "type": "string",
-              "enum": [ "single" ]
+              "const": "single"
             },
             "id": {
               "type": ["string", "null"]
@@ -29,8 +27,7 @@
           "type": "object",
           "properties": {
             "kind": {
-              "type": "string",
-              "enum": [ "branch" ]
+              "const": "branch"
             },
             "cases": {
               "type": "array",
@@ -56,8 +53,7 @@
           "type": "object",
           "properties": {
             "kind": {
-              "type": "string",
-              "enum": [ "final" ]
+              "const": "final"
             }
           },
           "required": [ "kind" ]
@@ -82,7 +78,7 @@
         "next": { "$ref": "#/definitions/MapNodeNext" },
         "ext": {
           "description": "Optional, implementation-specific data of arbitrary type.",
-          "_ocaml_any": true
+          "_any": true
         }
       },
       "required": [ "id", "display" ]
@@ -119,7 +115,7 @@
                 "type": ["string", "null"]
               },
               "ext": {
-                "_ocaml_any": true
+                "_any": true
               }
 						}
 					}

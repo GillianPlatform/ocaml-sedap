@@ -179,7 +179,7 @@ function genType(def, prop, parentDef) {
     }
   }
 
-  if (def._ocaml_any) {
+  if (def._any) {
     return 'Yojson.Safe.t';
   }
 
@@ -204,6 +204,20 @@ function genType(def, prop, parentDef) {
     default:
       throw new Error(`Unhandled type ${def.type}\n${JSON.stringify(def, null, 2)}`);
   }
+}
+
+const isVariant = (def) => {
+  if (!def.oneOf) return false;
+  for (const innerDef of def.oneOf) {
+    if (
+      innerDef.type !== 'object' ||
+      !innerDef.properties?.kind?.const ||
+      !(innerDef.required || []).includes('kind')
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 const emittedTypes = new Set();
@@ -327,37 +341,31 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
         emit(`  | Custom str -> \`String str`);
       }
     }
-  } else if (def._ocaml_variant) {
+  } else if (isVariant(def)) {
     emit('\n');
     const variants = [];
     for (const variant of def.oneOf) {
-      if (variant.type === 'object' && variant.properties?.kind?.type === 'string') {
-        if (variant.properties.kind.enum.length === 1) {
-          const kind = variant.properties.kind.enum[0];
-          const fields = [];
-          for (const [prop, propDef] of Object.entries(variant.properties)) {
-            if (prop === 'kind') continue;
-            fields.push({
-              name: prop,
-              ocamlName: toOcamlName(prop, false),
-              type: genType(propDef, prop, variant)
-            });
-          }
-          let fields_str = '';
-          if (fields.length > 0) {
-            const field_strs = fields.map(f => {
-              const key = f.name === f.ocamlName ? '' : ` [@key "${f.name}"]`;
-              return `      ${f.ocamlName} : ${f.type}${key}`;
-            });
-            fields_str = ` of {\n${field_strs.join('\n')}\n    }`;
-          }
-          const ocamlKind = toOcamlName(kind, true);
-          variants.push({ kind, ocamlKind, fields })
-          emit(`  | ${ocamlKind}${fields_str} [@name "${kind}"]\n`);
-          continue;
-        }
+      const kind = variant.properties.kind.const;
+      const fields = [];
+      for (const [prop, propDef] of Object.entries(variant.properties)) {
+        if (prop === 'kind') continue;
+        fields.push({
+          name: prop,
+          ocamlName: toOcamlName(prop, false),
+          type: genType(propDef, prop, variant)
+        });
       }
-      throw new Error(`Variant has invalid structure\n${JSON.stringify(variant, null, 2)}`);
+      let fields_str = '';
+      if (fields.length > 0) {
+        const field_strs = fields.map(f => {
+          const key = f.name === f.ocamlName ? '' : ` [@key "${f.name}"]`;
+          return `      ${f.ocamlName} : ${f.type}${key}`;
+        });
+        fields_str = ` of {\n${field_strs.join('\n')}\n    }`;
+      }
+      const ocamlKind = toOcamlName(kind, true);
+      variants.push({ kind, ocamlKind, fields })
+      emit(`  | ${ocamlKind}${fields_str} [@name "${kind}"]\n`);
     }
     if (mli) {
       emit('[@@deriving yojson]\n');
@@ -388,7 +396,7 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
       }
     emit('    | _ -> Error "invalid variant kind"')
     }
-  } else if (def._ocaml_any) {
+  } else if (def._any) {
     emit(' Yojson.Safe.t [@@deriving yojson]\n');
   } else {
     throw new Error(`Failed to emit type decl\n${JSON.stringify(def, null, 2)}`);
