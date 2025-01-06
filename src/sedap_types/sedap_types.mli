@@ -17,19 +17,50 @@ module Map_node_next : sig
     type t = {
       branch_label : string [@key "branchLabel"];
       branch_case : Branch_case.t [@key "branchCase"];
-      id : string;
+      id : string option;
     }
     [@@deriving make, yojson {strict = false}]
   end
 
   type t =
     | Single of {
-        id : string option
+        id : string option;
       } [@name "single"]
     | Branch of {
-        cases : Cases.t list
+        cases : Cases.t list;
       } [@name "branch"]
     | Final [@name "final"]
+  [@@deriving yojson]
+
+end
+
+module Map_node_extra : sig
+  type t =
+    | Badge of {
+        text : string;
+        tag : string;
+      } [@name "badge"]
+  [@@deriving yojson]
+
+end
+
+module Map_node_options : sig
+  type t =
+    | Basic of {
+        display : string;
+        selectable : bool;
+        extras : Map_node_extra.t list;
+      } [@name "basic"]
+    | Root of {
+        title : string;
+        subtitle : string;
+        zoomable : bool;
+        extras : Map_node_extra.t list;
+      } [@name "root"]
+    | Custom of {
+        custom_kind : string [@key "customKind"];
+        custom_options : Yojson.Safe.t [@key "customOptions"];
+      } [@name "custom"]
   [@@deriving yojson]
 
 end
@@ -37,10 +68,9 @@ end
 module Map_node : sig
   type t = {
     id : string;
-    display : string;
     submaps : string list option [@default None];
-    next : Map_node_next.t option [@default None];
-    ext : Yojson.Safe.t option [@default None]; (** Optional, implementation-specific data of arbitrary type. *)
+    next : Map_node_next.t;
+    options : Map_node_options.t;
   }
   [@@deriving make, yojson {strict = false}]
 end
@@ -98,23 +128,9 @@ module Jump_command : sig
   module Arguments : sig
     (** Arguments for 'jump'' request. *)
     type t = {
-      step_id : string option [@key "stepId"] [@default None]; (** The id of the execution node to jump to. *)
+      step_id : string [@key "stepId"]; (** The id of the execution node to jump to. *)
     }
     [@@deriving make, yojson {strict = false}]
-  end
-
-  module Result : sig
-    type t = Empty_dict.t
-    [@@deriving yojson]
-  end
-end
-
-module Jmp_command : sig
-  val type_ : string
-
-  module Arguments : sig
-    type t = Empty_dict.t
-    [@@deriving yojson]
   end
 
   module Result : sig

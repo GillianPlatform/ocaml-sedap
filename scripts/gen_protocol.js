@@ -10,20 +10,23 @@ if (arg0 !== 'ml' && arg0 !== 'mli')
 const mli = arg0 === 'mli';
 const schema = JSON.parse(Fs.readFileSync(argv._[1]));
 
+const types = {};
+const events = {};
+const requests = {};
+
 function stripRef(ref) {
   return ref.replace(/^#\/definitions\//, '');
 }
 
 function resolveDef(def) {
   if (def != null && def.$ref) {
-    return schema.definitions[stripRef(def.$ref)];
+    const ref = stripRef(def.$ref);
+    if (!types[ref]) {
+      return schema.definitions[stripRef(def.$ref)];
+    }
   }
   return def;
 }
-
-const types = {};
-const events = {};
-const requests = {};
 
 // Sort schema definitions into events, requests, and misc. types
 for (let key of Object.keys(schema.definitions)) {
@@ -359,7 +362,7 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
       if (fields.length > 0) {
         const field_strs = fields.map(f => {
           const key = f.name === f.ocamlName ? '' : ` [@key "${f.name}"]`;
-          return `      ${f.ocamlName} : ${f.type}${key}`;
+          return `      ${f.ocamlName} : ${f.type}${key};`;
         });
         fields_str = ` of {\n${field_strs.join('\n')}\n    }`;
       }
