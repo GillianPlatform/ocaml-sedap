@@ -1,2 +1,2 @@
-(lang dune 3.16)
+(lang dune 2.7)
 (name sedap)
