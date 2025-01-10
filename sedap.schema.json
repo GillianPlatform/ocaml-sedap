@@ -149,11 +149,19 @@
         "id": {
           "type": "string"
         },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
         "submaps": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "default": []
         },
         "next": { "$ref": "#/definitions/MapNodeNext" },
         "options": { "$ref": "#/definitions/MapNodeOptions" }
@@ -180,7 +188,8 @@
                     { "$ref": "#/definitions/MapNode" },
                     { "type": "null" }
                   ]
-                }
+                },
+                "default": {}
               },
               "roots": {
                 "type": "object",
@@ -188,8 +197,11 @@
                   "type": "string"
                 }
               },
-              "currentStep": {
-                "type": ["string", "null"]
+              "currentSteps": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               },
               "ext": {
                 "_any": true

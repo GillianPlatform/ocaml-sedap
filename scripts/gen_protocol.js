@@ -225,6 +225,14 @@ const isVariant = (def) => {
 
 const emittedTypes = new Set();
 
+function parseDefaultValue(value) {
+  if (value === undefined) return undefined;
+  if (value === null) return 'None';
+  if (_.isArray(value) && _.isEmpty(value)) return '[]';
+  if (typeof value === 'object' && _.isEmpty(value)) return 'String_map.empty';
+  throw Error(`Unsupported default value\n${JSON.stringify(value, null, 2)}`);
+}
+
 function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
   if (def != null && def.description) {
     emit(genDoc(def.description));
@@ -279,9 +287,12 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
         const typExp = genType(propDef, prop, def);
         emit(typExp);
         const isOptional = !(objDef.required || []).includes(prop);
-        if (isOptional && !typExp.endsWith(' option') && !(generic && ['arguments', 'body'].includes(prop))) {
+        const defaultValue = parseDefaultValue(propDef.default);
+        // console.log(typExp + ' ' + defaultValue);
+        if (isOptional && !typExp.endsWith(' option') && !(generic && ['arguments', 'body'].includes(prop)) && defaultValue === undefined) {
           emit(` option`);
         }
+        emit(`;`);
         if (mlprop !== prop) {
           emit(` [@key "${prop}"]`);
         }
@@ -296,9 +307,8 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
           //   emit(` [@default Type.Request]`);
           // }
         } else if (isOptional) {
-          emit(` [@default None]`);
+          emit(` [@default ${defaultValue !== undefined ? defaultValue : 'None'}]`);
         }
-        emit(`;`);
         if (propDef.description) {
           emit(' ');
           emit(genDoc(propDef.description));
@@ -362,12 +372,12 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
       if (fields.length > 0) {
         const field_strs = fields.map(f => {
           const key = f.name === f.ocamlName ? '' : ` [@key "${f.name}"]`;
-          return `      ${f.ocamlName} : ${f.type}${key};`;
+          return `      ${f.ocamlName} : ${f.type};${key}`;
         });
         fields_str = ` of {\n${field_strs.join('\n')}\n    }`;
       }
       const ocamlKind = toOcamlName(kind, true);
-      variants.push({ kind, ocamlKind, fields })
+      variants.push({ kind, ocamlKind, fields });
       emit(`  | ${ocamlKind}${fields_str} [@name "${kind}"]\n`);
     }
     if (mli) {

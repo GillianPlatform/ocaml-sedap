@@ -14,8 +14,8 @@ end
 module Map_node_next = struct
   module Cases = struct
     type t = {
-      branch_label : string [@key "branchLabel"];
-      branch_case : Branch_case.t [@key "branchCase"];
+      branch_label : string; [@key "branchLabel"]
+      branch_case : Branch_case.t; [@key "branchCase"]
       id : string option;
     }
     [@@deriving make, yojson {strict = false}]
@@ -102,8 +102,8 @@ module Map_node_options = struct
         extras : Map_node_extra.t list;
       } [@name "root"]
     | Custom of {
-        custom_kind : string [@key "customKind"];
-        custom_options : Yojson.Safe.t [@key "customOptions"];
+        custom_kind : string; [@key "customKind"]
+        custom_options : Yojson.Safe.t; [@key "customOptions"]
       } [@name "custom"]
 
     let to_yojson = function
@@ -162,7 +162,8 @@ end
 module Map_node = struct
   type t = {
     id : string;
-    submaps : string list option [@default None];
+    aliases : string list; [@default []]
+    submaps : string list; [@default []]
     next : Map_node_next.t;
     options : Map_node_options.t;
   }
@@ -185,10 +186,10 @@ module Map_update_event = struct
     end
 
     type t = {
-      nodes : Nodes.t option [@default None]; (** An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID. *)
-      roots : Roots.t option [@default None];
-      current_step : string option [@key "currentStep"] [@default None];
-      ext : Yojson.Safe.t option [@default None];
+      nodes : Nodes.t; [@default String_map.empty] (** An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID. *)
+      roots : Roots.t option; [@default None]
+      current_steps : string list option; [@key "currentSteps"] [@default None]
+      ext : Yojson.Safe.t option; [@default None]
     }
     [@@deriving make, yojson {strict = false}]
   end
@@ -203,8 +204,8 @@ module Step_specific_command = struct
   module Arguments = struct
     (** Arguments for 'stepSpecific' request. *)
     type t = {
-      step_id : string [@key "stepId"]; (** The id of the execution node to step from. *)
-      branch_case : Branch_case.t option [@key "branchCase"] [@default None]; (** The branch case to step in. *)
+      step_id : string; [@key "stepId"] (** The id of the execution node to step from. *)
+      branch_case : Branch_case.t option; [@key "branchCase"] [@default None] (** The branch case to step in. *)
     }
     [@@deriving make, yojson {strict = false}]
   end
@@ -222,7 +223,7 @@ module Jump_command = struct
   module Arguments = struct
     (** Arguments for 'jump'' request. *)
     type t = {
-      step_id : string [@key "stepId"]; (** The id of the execution node to jump to. *)
+      step_id : string; [@key "stepId"] (** The id of the execution node to jump to. *)
     }
     [@@deriving make, yojson {strict = false}]
   end
