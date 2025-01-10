@@ -3,7 +3,7 @@
 
 include module type of Debug_protocol
 
-open Utils
+include module type of Sedap_types_static
 
 module Branch_case : sig
   (** The type of a branch case is arbitrary and implementation-dependent.

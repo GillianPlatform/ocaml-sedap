@@ -2,6 +2,8 @@
 (* Auto-generated from json schema. Do not edit manually. *)
 
 include Debug_protocol
+include Sedap_types_static
+
 open Utils
 
 module Branch_case = struct

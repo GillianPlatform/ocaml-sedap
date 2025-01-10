@@ -59,10 +59,12 @@ emit(`(** ${schema.description} *)\n`);
 emit(`(* Auto-generated from json schema. Do not edit manually. *)\n\n`);
 if (mli) {
   emit(`include module type of Debug_protocol\n\n`);
+  emit(`include module type of Sedap_types_static\n\n`);
 } else {
   emit(`include Debug_protocol\n`);
+  emit(`include Sedap_types_static\n\n`);
+  emit(`open Utils\n\n`)
 }
-emit(`open Utils\n\n`)
 
 
 const toOcamlName = (() => {
