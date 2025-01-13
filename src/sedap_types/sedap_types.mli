@@ -76,28 +76,32 @@ module Map_node : sig
   [@@deriving make, yojson {strict = false}]
 end
 
+module Map_update_event_body : sig
+  module Nodes : sig
+    (** An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID. *)
+    type t = Map_node.t option String_map.t
+    [@@deriving yojson]
+  end
+
+  module Roots : sig
+    type t = String_dict.t
+    [@@deriving yojson]
+  end
+
+  type t = {
+    nodes : Nodes.t; [@default String_map.empty] (** An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID. *)
+    roots : Roots.t option; [@default None]
+    current_steps : string list option; [@key "currentSteps"] [@default None]
+    ext : Yojson.Safe.t option; [@default None]
+  }
+  [@@deriving make, yojson {strict = false}]
+end
+
 module Map_update_event : sig
   val type_ : string
 
   module Payload : sig
-    module Nodes : sig
-      (** An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID. *)
-      type t = Map_node.t option String_map.t
-      [@@deriving yojson]
-    end
-
-    module Roots : sig
-      type t = String_dict.t
-      [@@deriving yojson]
-    end
-
-    type t = {
-      nodes : Nodes.t; [@default String_map.empty] (** An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID. *)
-      roots : Roots.t option; [@default None]
-      current_steps : string list option; [@key "currentSteps"] [@default None]
-      ext : Yojson.Safe.t option; [@default None]
-    }
-    [@@deriving make, yojson {strict = false}]
+    type t = Map_update_event_body.t [@@deriving yojson]
   end
 end
 

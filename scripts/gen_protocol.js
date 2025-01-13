@@ -414,7 +414,9 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
   } else if (def._any) {
     emit(' Yojson.Safe.t [@@deriving yojson]\n');
   } else {
-    throw new Error(`Failed to emit type decl\n${JSON.stringify(def, null, 2)}`);
+    emit(' ');
+    emit(genType(def, 'value', def));
+    emit(' [@@deriving yojson]');
   }
   emit(`\n`);
 }

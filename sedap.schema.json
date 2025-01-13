@@ -1,8 +1,8 @@
 {
-	"$schema": "http://json-schema.org/draft-04/schema#",
-	"title": "SEDAP",
-	"description": "An extension of the Debug Adapter Protocol for debugging symbolic execution.",
-	"type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "SEDAP",
+  "description": "An extension of the Debug Adapter Protocol for debugging symbolic execution.",
+  "type": "object",
 
   "definitions": {
     "BranchCase": {
@@ -168,121 +168,122 @@
       },
       "required": [ "id", "next", "options" ]
     },
+    "MapUpdateEventBody": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "object",
+          "description": "An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID.",
+          "additionalProperties": {
+            "oneOf": [
+              { "$ref": "#/definitions/MapNode" },
+              { "type": "null" }
+            ]
+          },
+          "default": {}
+        },
+        "roots": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "currentSteps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ext": {
+          "_any": true
+        }
+      }
+    },
     "MapUpdateEvent": {
-			"allOf": [ { "$ref": "dap.schema.json#/definitions/Event" }, {
-				"type": "object",
-				"description": "The event indicates that the execution map has been updated with new information.\nThis is typically sent alongside the \"stopped\" event.",
-				"properties": {
-					"event": {
-						"type": "string",
-						"enum": [ "mapUpdate" ]
-					},
-					"body": {
-						"type": "object",
-						"properties": {
-							"nodes": {
-                "type": "object",
-                "description": "An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID.",
-                "additionalProperties": {
-                  "oneOf": [
-                    { "$ref": "#/definitions/MapNode" },
-                    { "type": "null" }
-                  ]
-                },
-                "default": {}
-              },
-              "roots": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "string"
-                }
-              },
-              "currentSteps": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "ext": {
-                "_any": true
-              }
-						}
-					}
-				},
-				"required": [ "event", "body" ]
-			}]
-		},
+      "allOf": [ { "$ref": "dap.schema.json#/definitions/Event" }, {
+        "type": "object",
+        "description": "The event indicates that the execution map has been updated with new information.\nThis is typically sent alongside the \"stopped\" event.",
+        "properties": {
+          "event": {
+            "type": "string",
+            "enum": [ "mapUpdate" ]
+          },
+          "body": { "$ref": "#/definitions/MapUpdateEventBody" }
+        },
+        "required": [ "event", "body" ]
+      }]
+    },
 
     "StepSpecificRequest": {
-			"allOf": [ { "$ref": "dap.schema.json#/definitions/Request" }, {
-				"type": "object",
-				"description": "The request starts the debugger to step from a specific point in execution, in a specific direction in the case of branching.\nWhen there is no branch, this is equivalent to \"jump\" followed by \"stepIn\".\nErrors if a branch is present and no branch case is supplied, or a branch case is supplied where ther is no branch.",
-				"properties": {
-					"command": {
-						"type": "string",
-						"enum": [ "stepSpecific" ]
-					},
-					"arguments": {
-						"$ref": "#/definitions/StepSpecificArguments"
-					}
-				},
-				"required": [ "command", "arguments"  ]
-			}]
-		},
-		"StepSpecificArguments": {
-			"type": "object",
-			"description": "Arguments for 'stepSpecific' request.",
-			"properties": {
+      "allOf": [ { "$ref": "dap.schema.json#/definitions/Request" }, {
+        "type": "object",
+        "description": "The request starts the debugger to step from a specific point in execution, in a specific direction in the case of branching.\nWhen there is no branch, this is equivalent to \"jump\" followed by \"stepIn\".\nErrors if a branch is present and no branch case is supplied, or a branch case is supplied where ther is no branch.",
+        "properties": {
+          "command": {
+            "type": "string",
+            "enum": [ "stepSpecific" ]
+          },
+          "arguments": {
+            "$ref": "#/definitions/StepSpecificArguments"
+          }
+        },
+        "required": [ "command", "arguments"  ]
+      }]
+    },
+    "StepSpecificArguments": {
+      "type": "object",
+      "description": "Arguments for 'stepSpecific' request.",
+      "properties": {
         "stepId": {
           "type": "string",
           "description": "The id of the execution node to step from."
         },
-				"branchCase": {
+        "branchCase": {
           "description": "The branch case to step in.",
           "$ref": "#/definitions/BranchCase"
         }
-			},
+      },
       "required": [ "stepId" ]
-		},
-		"StepSpecificResponse": {
-			"allOf": [ { "$ref": "dap.schema.json#/definitions/Response" }, {
-				"type": "object",
-				"description": "Response to 'stepSpecific' request. This is just an acknowledgement, so no body field is required."
-			}]
-		},
+    },
+    "StepSpecificResponse": {
+      "allOf": [ { "$ref": "dap.schema.json#/definitions/Response" }, {
+        "type": "object",
+        "description": "Response to 'stepSpecific' request. This is just an acknowledgement, so no body field is required."
+      }]
+    },
 
     "JumpRequest": {
-			"allOf": [ { "$ref": "dap.schema.json#/definitions/Request" }, {
-				"type": "object",
-				"description": "The request causes the exeuction state to jump to another (existing) point in execution.",
-				"properties": {
-					"command": {
-						"type": "string",
-						"enum": [ "jump" ]
-					},
-					"arguments": {
-						"$ref": "#/definitions/JumpArguments"
-					}
-				},
-				"required": [ "command", "arguments"  ]
-			}]
-		},
-		"JumpArguments": {
-			"type": "object",
-			"description": "Arguments for 'jump'' request.",
-			"properties": {
+      "allOf": [ { "$ref": "dap.schema.json#/definitions/Request" }, {
+        "type": "object",
+        "description": "The request causes the exeuction state to jump to another (existing) point in execution.",
+        "properties": {
+          "command": {
+            "type": "string",
+            "enum": [ "jump" ]
+          },
+          "arguments": {
+            "$ref": "#/definitions/JumpArguments"
+          }
+        },
+        "required": [ "command", "arguments"  ]
+      }]
+    },
+    "JumpArguments": {
+      "type": "object",
+      "description": "Arguments for 'jump'' request.",
+      "properties": {
         "stepId": {
           "type": "string",
           "description": "The id of the execution node to jump to."
         }
-			},
+      },
       "required": [ "stepId" ]
-		},
-		"JumpResponse": {
-			"allOf": [ { "$ref": "dap.schema.json#/definitions/Response" }, {
-				"type": "object",
-				"description": "Response to 'jump' request. This is just an acknowledgement, so no body field is required."
-			}]
-		}
+    },
+    "JumpResponse": {
+      "allOf": [ { "$ref": "dap.schema.json#/definitions/Response" }, {
+        "type": "object",
+        "description": "Response to 'jump' request. This is just an acknowledgement, so no body field is required."
+      }]
+    }
   }
 }
