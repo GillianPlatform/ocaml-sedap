@@ -232,6 +232,9 @@ function parseDefaultValue(value) {
   if (value === null) return 'None';
   if (_.isArray(value) && _.isEmpty(value)) return '[]';
   if (typeof value === 'object' && _.isEmpty(value)) return 'String_map.empty';
+  if (_.isString(value)) return `"${value}"`;
+  if (_.isNumber(value)) return value;
+  if (_.isBoolean(value)) return value;
   throw Error(`Unsupported default value\n${JSON.stringify(value, null, 2)}`);
 }
 

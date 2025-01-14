@@ -194,6 +194,11 @@
             "type": "string"
           }
         },
+				"reset": {
+					"type": "boolean",
+					"description": "If true, the map should be reset to its initial state; this event contains the full map and previous information can be discarded.",
+					"default": false
+				},
         "ext": {
           "_any": true
         }
