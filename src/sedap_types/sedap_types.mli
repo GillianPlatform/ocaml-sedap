@@ -145,3 +145,17 @@ module Jump_command : sig
   end
 end
 
+module Get_full_map_command : sig
+  val type_ : string
+
+  module Arguments : sig
+    (** The 'getFullMap' request takes no arguments. *)
+    type t = Empty_dict.t
+    [@@deriving yojson]
+  end
+
+  module Result : sig
+    type t = Map_update_event_body.t [@@deriving yojson]
+  end
+end
+

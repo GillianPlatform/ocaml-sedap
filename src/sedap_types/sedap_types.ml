@@ -241,3 +241,17 @@ module Jump_command = struct
   end
 end
 
+module Get_full_map_command = struct
+  let type_ = "getFullMap"
+
+  module Arguments = struct
+    (** The 'getFullMap' request takes no arguments. *)
+    type t = Empty_dict.t
+    [@@deriving yojson]
+  end
+
+  module Result = struct
+    type t = Map_update_event_body.t [@@deriving yojson]
+  end
+end
+
