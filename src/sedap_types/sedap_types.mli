@@ -76,15 +76,18 @@ module Map_node : sig
   [@@deriving make, yojson {strict = false}]
 end
 
+module Map_root : sig
+  type t = {
+    id : string;
+    name : string;
+  }
+  [@@deriving make, yojson {strict = false}]
+end
+
 module Map_update_event_body : sig
   module Nodes : sig
     (** An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID. *)
     type t = Map_node.t option String_map.t
-    [@@deriving yojson]
-  end
-
-  module Roots : sig
-    type t = String_dict.t
     [@@deriving yojson]
   end
 
@@ -98,7 +101,7 @@ module Map_update_event_body : sig
 
   type t = {
     nodes : Nodes.t; [@default String_map.empty] (** An object of map nodes to update, where a key is the node's ID, or null to specify node deleting the node at that ID. *)
-    roots : Roots.t option; [@default None]
+    roots : Map_root.t list; [@default []]
     current_steps : Current_steps.t option; [@key "currentSteps"] [@default None]
     reset : bool; [@default false] (** If true, the map should be reset to its initial state; this event contains the full map and previous information can be discarded. *)
     ext : Yojson.Safe.t option; [@default None]
