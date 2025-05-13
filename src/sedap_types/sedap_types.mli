@@ -38,7 +38,7 @@ module Map_node_extra : sig
   type t =
     | Badge of {
         text : string;
-        tag : string;
+        tag : string option;
       } [@name "badge"]
     | Tooltip of {
         text : string;
@@ -61,15 +61,15 @@ module Map_node_options : sig
   type t =
     | Basic of {
         display : string;
-        selectable : bool;
-        highlight : Highlight.t;
-        extras : Map_node_extra.t list;
+        selectable : bool option;
+        highlight : Highlight.t option;
+        extras : Map_node_extra.t list option;
       } [@name "basic"]
     | Root of {
         title : string;
-        subtitle : string;
-        zoomable : bool;
-        extras : Map_node_extra.t list;
+        subtitle : string option;
+        zoomable : bool option;
+        extras : Map_node_extra.t list option;
       } [@name "root"]
     | Custom of {
         custom_kind : string; [@key "customKind"]

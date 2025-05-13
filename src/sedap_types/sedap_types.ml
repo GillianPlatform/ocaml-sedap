@@ -67,7 +67,7 @@ module Map_node_extra = struct
   type t =
     | Badge of {
         text : string;
-        tag : string;
+        tag : string option;
       } [@name "badge"]
     | Tooltip of {
         text : string;
@@ -77,7 +77,7 @@ module Map_node_extra = struct
       | Badge { text; tag } -> `Assoc [
           ("kind", `String "badge");
           ("text", [%to_yojson: string] text);
-          ("tag", [%to_yojson: string] tag);
+          ("tag", [%to_yojson: string option] tag);
         ]
       | Tooltip { text } -> `Assoc [
           ("kind", `String "tooltip");
@@ -89,7 +89,7 @@ module Map_node_extra = struct
       match List.assoc_opt "type" obj with
       | Some (`String "badge") ->
           let* _text = key_of_yojson "text" [%of_yojson: string] obj in
-          let* _tag = key_of_yojson "tag" [%of_yojson: string] obj in
+          let* _tag = key_of_yojson "tag" [%of_yojson: string option] obj in
         Ok (Badge {
             text = _text;
             tag = _tag;
@@ -128,15 +128,15 @@ module Map_node_options = struct
   type t =
     | Basic of {
         display : string;
-        selectable : bool;
-        highlight : Highlight.t;
-        extras : Map_node_extra.t list;
+        selectable : bool option;
+        highlight : Highlight.t option;
+        extras : Map_node_extra.t list option;
       } [@name "basic"]
     | Root of {
         title : string;
-        subtitle : string;
-        zoomable : bool;
-        extras : Map_node_extra.t list;
+        subtitle : string option;
+        zoomable : bool option;
+        extras : Map_node_extra.t list option;
       } [@name "root"]
     | Custom of {
         custom_kind : string; [@key "customKind"]
@@ -147,16 +147,16 @@ module Map_node_options = struct
       | Basic { display; selectable; highlight; extras } -> `Assoc [
           ("kind", `String "basic");
           ("display", [%to_yojson: string] display);
-          ("selectable", [%to_yojson: bool] selectable);
-          ("highlight", [%to_yojson: Highlight.t] highlight);
-          ("extras", [%to_yojson: Map_node_extra.t list] extras);
+          ("selectable", [%to_yojson: bool option] selectable);
+          ("highlight", [%to_yojson: Highlight.t option] highlight);
+          ("extras", [%to_yojson: Map_node_extra.t list option] extras);
         ]
       | Root { title; subtitle; zoomable; extras } -> `Assoc [
           ("kind", `String "root");
           ("title", [%to_yojson: string] title);
-          ("subtitle", [%to_yojson: string] subtitle);
-          ("zoomable", [%to_yojson: bool] zoomable);
-          ("extras", [%to_yojson: Map_node_extra.t list] extras);
+          ("subtitle", [%to_yojson: string option] subtitle);
+          ("zoomable", [%to_yojson: bool option] zoomable);
+          ("extras", [%to_yojson: Map_node_extra.t list option] extras);
         ]
       | Custom { custom_kind; custom_options } -> `Assoc [
           ("kind", `String "custom");
@@ -169,9 +169,9 @@ module Map_node_options = struct
       match List.assoc_opt "type" obj with
       | Some (`String "basic") ->
           let* _display = key_of_yojson "display" [%of_yojson: string] obj in
-          let* _selectable = key_of_yojson "selectable" [%of_yojson: bool] obj in
-          let* _highlight = key_of_yojson "highlight" [%of_yojson: Highlight.t] obj in
-          let* _extras = key_of_yojson "extras" [%of_yojson: Map_node_extra.t list] obj in
+          let* _selectable = key_of_yojson "selectable" [%of_yojson: bool option] obj in
+          let* _highlight = key_of_yojson "highlight" [%of_yojson: Highlight.t option] obj in
+          let* _extras = key_of_yojson "extras" [%of_yojson: Map_node_extra.t list option] obj in
         Ok (Basic {
             display = _display;
             selectable = _selectable;
@@ -180,9 +180,9 @@ module Map_node_options = struct
         })
       | Some (`String "root") ->
           let* _title = key_of_yojson "title" [%of_yojson: string] obj in
-          let* _subtitle = key_of_yojson "subtitle" [%of_yojson: string] obj in
-          let* _zoomable = key_of_yojson "zoomable" [%of_yojson: bool] obj in
-          let* _extras = key_of_yojson "extras" [%of_yojson: Map_node_extra.t list] obj in
+          let* _subtitle = key_of_yojson "subtitle" [%of_yojson: string option] obj in
+          let* _zoomable = key_of_yojson "zoomable" [%of_yojson: bool option] obj in
+          let* _extras = key_of_yojson "extras" [%of_yojson: Map_node_extra.t list option] obj in
         Ok (Root {
             title = _title;
             subtitle = _subtitle;

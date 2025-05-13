@@ -367,10 +367,14 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
       const fields = [];
       for (const [prop, propDef] of Object.entries(variant.properties)) {
         if (prop === 'kind') continue;
+        let type = genType(propDef, prop, variant);
+        if (!type.endsWith(" option") && !(variant.required || []).includes(prop)) {
+          type += ' option';
+        }
         fields.push({
           name: prop,
           ocamlName: toOcamlName(prop, false),
-          type: genType(propDef, prop, variant)
+          type,
         });
       }
       let fields_str = '';
