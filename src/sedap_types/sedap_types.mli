@@ -40,15 +40,29 @@ module Map_node_extra : sig
         text : string;
         tag : string;
       } [@name "badge"]
+    | Tooltip of {
+        text : string;
+      } [@name "tooltip"]
   [@@deriving yojson]
 
 end
 
 module Map_node_options : sig
+  module Highlight : sig
+    type t =
+      | Error [@name "error"]
+      | Warning [@name "warning"]
+      | Info [@name "info"]
+      | Success [@name "success"]
+
+    include JSONABLE with type t := t
+  end
+
   type t =
     | Basic of {
         display : string;
         selectable : bool;
+        highlight : Highlight.t;
         extras : Map_node_extra.t list;
       } [@name "basic"]
     | Root of {

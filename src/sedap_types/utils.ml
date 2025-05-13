@@ -10,3 +10,6 @@ let key_of_yojson key f obj =
   match List.assoc_opt key obj with
   | Some x -> f x
   | None -> f `Null
+
+let print_exn_at_loc loc =
+  Printf.sprintf "Exception raised at %s:%d" loc.Lexing.pos_fname loc.Lexing.pos_lnum
