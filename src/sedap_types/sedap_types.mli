@@ -5,36 +5,20 @@ include module type of Debug_protocol
 
 include module type of Sedap_types_static
 
-module Branch_case : sig
-  (** The type of a branch case is arbitrary and implementation-dependent.
-  The UI should essentially treat this as a black box to pass back to the debugger when calling "stepSpecific". *)
-  type t = Yojson.Safe.t [@@deriving yojson]
-
-end
-
 module Map_node_next : sig
-  module Cases : sig
+  module Value : sig
     type t = {
-      branch_label : string; [@key "branchLabel"]
-      branch_case : Branch_case.t; [@key "branchCase"]
-      id : string option;
+      label : string option; [@default None]
+      step_id : string; [@key "stepId"]
     }
     [@@deriving make, yojson {strict = false}]
   end
 
-  type t =
-    | Single of {
-        id : string option;
-      } [@name "single"]
-    | Branch of {
-        cases : Cases.t list;
-      } [@name "branch"]
-    | Final [@name "final"]
-  [@@deriving yojson]
-
+  type t = Value.t list [@@deriving yojson]
 end
 
 module Map_node_extra : sig
+  (** Additional, optional details to attach to a node *)
   type t =
     | Badge of {
         text : string;
@@ -58,6 +42,7 @@ module Map_node_options : sig
     include JSONABLE with type t := t
   end
 
+  (** The kind of map node, with appropriate options *)
   type t =
     | Basic of {
         display : string;
@@ -71,6 +56,7 @@ module Map_node_options : sig
         zoomable : bool option;
         extras : Map_node_extra.t list option;
       } [@name "root"]
+    | Pending [@name "pending"]
     | Custom of {
         custom_kind : string; [@key "customKind"]
         custom_options : Yojson.Safe.t; [@key "customOptions"]
@@ -81,7 +67,7 @@ end
 
 module Map_node : sig
   type t = {
-    id : string;
+    step_id : string; [@key "stepId"]
     aliases : string list; [@default []]
     submaps : string list; [@default []]
     next : Map_node_next.t;
@@ -92,7 +78,7 @@ end
 
 module Map_root : sig
   type t = {
-    id : string;
+    map_id : string; [@key "mapId"]
     name : string;
   }
   [@@deriving make, yojson {strict = false}]
@@ -128,27 +114,6 @@ module Map_update_event : sig
 
   module Payload : sig
     type t = Map_update_event_body.t [@@deriving yojson]
-  end
-end
-
-(** The request starts the debugger to step from a specific point in execution, in a specific direction in the case of branching.
-When there is no branch, this is equivalent to "jump" followed by "stepIn".
-Errors if a branch is present and no branch case is supplied, or a branch case is supplied where ther is no branch. *)
-module Step_specific_command : sig
-  val type_ : string
-
-  module Arguments : sig
-    (** Arguments for 'stepSpecific' request. *)
-    type t = {
-      step_id : string; [@key "stepId"] (** The id of the execution node to step from. *)
-      branch_case : Branch_case.t option; [@key "branchCase"] [@default None] (** The branch case to step in. *)
-    }
-    [@@deriving make, yojson {strict = false}]
-  end
-
-  module Result : sig
-    type t = Empty_dict.t
-    [@@deriving yojson]
   end
 end
 

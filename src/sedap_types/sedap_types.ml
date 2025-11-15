@@ -6,64 +6,20 @@ include Sedap_types_static
 
 open Utils
 
-module Branch_case = struct
-  (** The type of a branch case is arbitrary and implementation-dependent.
-  The UI should essentially treat this as a black box to pass back to the debugger when calling "stepSpecific". *)
-  type t = Yojson.Safe.t [@@deriving yojson]
-
-end
-
 module Map_node_next = struct
-  module Cases = struct
+  module Value = struct
     type t = {
-      branch_label : string; [@key "branchLabel"]
-      branch_case : Branch_case.t; [@key "branchCase"]
-      id : string option;
+      label : string option; [@default None]
+      step_id : string; [@key "stepId"]
     }
     [@@deriving make, yojson {strict = false}]
   end
 
-  type t =
-    | Single of {
-        id : string option;
-      } [@name "single"]
-    | Branch of {
-        cases : Cases.t list;
-      } [@name "branch"]
-    | Final [@name "final"]
-
-    let to_yojson = function
-      | Single { id } -> `Assoc [
-          ("kind", `String "single");
-          ("id", [%to_yojson: string option] id);
-        ]
-      | Branch { cases } -> `Assoc [
-          ("kind", `String "branch");
-          ("cases", [%to_yojson: Cases.t list] cases);
-        ]
-      | Final  -> `Assoc [
-          ("kind", `String "final");
-        ]
-
-    let of_yojson json =
-      let* obj = obj_of_yojson json in
-      match List.assoc_opt "type" obj with
-      | Some (`String "single") ->
-          let* _id = key_of_yojson "id" [%of_yojson: string option] obj in
-        Ok (Single {
-            id = _id;
-        })
-      | Some (`String "branch") ->
-          let* _cases = key_of_yojson "cases" [%of_yojson: Cases.t list] obj in
-        Ok (Branch {
-            cases = _cases;
-        })
-      | Some (`String "final") ->
-        Ok (Final)
-      | _ -> Error "invalid variant kind"
+  type t = Value.t list [@@deriving yojson]
 end
 
 module Map_node_extra = struct
+  (** Additional, optional details to attach to a node *)
   type t =
     | Badge of {
         text : string;
@@ -125,6 +81,7 @@ module Map_node_options = struct
 
   end
 
+  (** The kind of map node, with appropriate options *)
   type t =
     | Basic of {
         display : string;
@@ -138,6 +95,7 @@ module Map_node_options = struct
         zoomable : bool option;
         extras : Map_node_extra.t list option;
       } [@name "root"]
+    | Pending [@name "pending"]
     | Custom of {
         custom_kind : string; [@key "customKind"]
         custom_options : Yojson.Safe.t; [@key "customOptions"]
@@ -157,6 +115,9 @@ module Map_node_options = struct
           ("subtitle", [%to_yojson: string option] subtitle);
           ("zoomable", [%to_yojson: bool option] zoomable);
           ("extras", [%to_yojson: Map_node_extra.t list option] extras);
+        ]
+      | Pending  -> `Assoc [
+          ("kind", `String "pending");
         ]
       | Custom { custom_kind; custom_options } -> `Assoc [
           ("kind", `String "custom");
@@ -189,6 +150,8 @@ module Map_node_options = struct
             zoomable = _zoomable;
             extras = _extras;
         })
+      | Some (`String "pending") ->
+        Ok (Pending)
       | Some (`String "custom") ->
           let* _custom_kind = key_of_yojson "customKind" [%of_yojson: string] obj in
           let* _custom_options = key_of_yojson "customOptions" [%of_yojson: Yojson.Safe.t] obj in
@@ -201,7 +164,7 @@ end
 
 module Map_node = struct
   type t = {
-    id : string;
+    step_id : string; [@key "stepId"]
     aliases : string list; [@default []]
     submaps : string list; [@default []]
     next : Map_node_next.t;
@@ -212,7 +175,7 @@ end
 
 module Map_root = struct
   type t = {
-    id : string;
+    map_id : string; [@key "mapId"]
     name : string;
   }
   [@@deriving make, yojson {strict = false}]
@@ -248,27 +211,6 @@ module Map_update_event = struct
 
   module Payload = struct
     type t = Map_update_event_body.t [@@deriving yojson]
-  end
-end
-
-(** The request starts the debugger to step from a specific point in execution, in a specific direction in the case of branching.
-When there is no branch, this is equivalent to "jump" followed by "stepIn".
-Errors if a branch is present and no branch case is supplied, or a branch case is supplied where ther is no branch. *)
-module Step_specific_command = struct
-  let type_ = "stepSpecific"
-
-  module Arguments = struct
-    (** Arguments for 'stepSpecific' request. *)
-    type t = {
-      step_id : string; [@key "stepId"] (** The id of the execution node to step from. *)
-      branch_case : Branch_case.t option; [@key "branchCase"] [@default None] (** The branch case to step in. *)
-    }
-    [@@deriving make, yojson {strict = false}]
-  end
-
-  module Result = struct
-    type t = Empty_dict.t
-    [@@deriving yojson]
   end
 end
 

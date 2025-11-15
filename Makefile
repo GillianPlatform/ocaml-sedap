@@ -5,7 +5,10 @@ BUILD_PACKAGES=ocamlformat.0.26.2,odoc
 build:
 	opam exec -- dune build
 
-init-dev:
+update-schema:
 	git submodule update --init --recursive
-	yarn
+
+init-dev:
+	npm i
+	make update-schema
 	opam switch create . --packages=${OCAML_VARIANT},${BUILD_PACKAGES},${DEV_PACKAGES} -y --deps-only
