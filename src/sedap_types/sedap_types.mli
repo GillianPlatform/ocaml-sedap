@@ -126,12 +126,48 @@ module Map_update_event : sig
   end
 end
 
+(** The request causes the exeuction state to step-over from a specific point in execution. *)
+module Step_over_at_command : sig
+  val type_ : string
+
+  module Arguments : sig
+    (** Arguments for 'stepOverAt' request. *)
+    type t = {
+      step_id : string; [@key "stepId"] (** The id of the execution node to step-over from. *)
+    }
+    [@@deriving make, yojson {strict = false}]
+  end
+
+  module Result : sig
+    type t = Empty_dict.t
+    [@@deriving yojson]
+  end
+end
+
+(** The request causes the exeuction state to step-in from a specific point in execution. *)
+module Step_in_at_command : sig
+  val type_ : string
+
+  module Arguments : sig
+    (** Arguments for 'stepInAt' request. *)
+    type t = {
+      step_id : string; [@key "stepId"] (** The id of the execution node to step-in from. *)
+    }
+    [@@deriving make, yojson {strict = false}]
+  end
+
+  module Result : sig
+    type t = Empty_dict.t
+    [@@deriving yojson]
+  end
+end
+
 (** The request causes the exeuction state to jump to another (existing) point in execution. *)
 module Jump_command : sig
   val type_ : string
 
   module Arguments : sig
-    (** Arguments for 'jump'' request. *)
+    (** Arguments for 'jump' request. *)
     type t = {
       step_id : string; [@key "stepId"] (** The id of the execution node to jump to. *)
     }
