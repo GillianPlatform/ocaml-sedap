@@ -59,6 +59,25 @@ module Map_node_extra = struct
 end
 
 module Map_node_options = struct
+  module Controls = struct
+    type t =
+      | Jump [@name "jump"]
+      | Step_in [@name "stepIn"]
+      | Step_over [@name "stepOver"]
+
+    let of_yojson = function
+      | `String "jump" -> Ok Jump
+      | `String "stepIn" -> Ok Step_in
+      | `String "stepOver" -> Ok Step_over
+      | _ -> Error (print_exn_at_loc [%here])
+
+    let to_yojson = function
+      | Jump -> `String "jump"
+      | Step_in -> `String "stepIn"
+      | Step_over -> `String "stepOver"
+
+  end
+
   module Highlight = struct
     type t =
       | Error [@name "error"]
@@ -85,7 +104,7 @@ module Map_node_options = struct
   type t =
     | Basic of {
         display : string;
-        selectable : bool option;
+        controls : Controls.t list option;
         highlight : Highlight.t option;
         extras : Map_node_extra.t list option;
       } [@name "basic"]
@@ -102,10 +121,10 @@ module Map_node_options = struct
       } [@name "custom"]
 
     let to_yojson = function
-      | Basic { display; selectable; highlight; extras } -> `Assoc [
+      | Basic { display; controls; highlight; extras } -> `Assoc [
           ("kind", `String "basic");
           ("display", [%to_yojson: string] display);
-          ("selectable", [%to_yojson: bool option] selectable);
+          ("controls", [%to_yojson: Controls.t list option] controls);
           ("highlight", [%to_yojson: Highlight.t option] highlight);
           ("extras", [%to_yojson: Map_node_extra.t list option] extras);
         ]
@@ -130,12 +149,12 @@ module Map_node_options = struct
       match List.assoc_opt "type" obj with
       | Some (`String "basic") ->
           let* _display = key_of_yojson "display" [%of_yojson: string] obj in
-          let* _selectable = key_of_yojson "selectable" [%of_yojson: bool option] obj in
+          let* _controls = key_of_yojson "controls" [%of_yojson: Controls.t list option] obj in
           let* _highlight = key_of_yojson "highlight" [%of_yojson: Highlight.t option] obj in
           let* _extras = key_of_yojson "extras" [%of_yojson: Map_node_extra.t list option] obj in
         Ok (Basic {
             display = _display;
-            selectable = _selectable;
+            controls = _controls;
             highlight = _highlight;
             extras = _extras;
         })

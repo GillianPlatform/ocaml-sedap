@@ -293,7 +293,6 @@ function emitTypeDecl(emit, def, {generic, isEmitTypeModule} = {}) {
         emit(typExp);
         const isOptional = !(objDef.required || []).includes(prop);
         const defaultValue = parseDefaultValue(propDef.default);
-        // console.log(typExp + ' ' + defaultValue);
         if (isOptional && !typExp.endsWith(' option') && !(generic && ['arguments', 'body'].includes(prop)) && defaultValue === undefined) {
           emit(` option`);
         }

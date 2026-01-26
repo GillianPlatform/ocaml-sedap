@@ -32,6 +32,15 @@ module Map_node_extra : sig
 end
 
 module Map_node_options : sig
+  module Controls : sig
+    type t =
+      | Jump [@name "jump"]
+      | Step_in [@name "stepIn"]
+      | Step_over [@name "stepOver"]
+
+    include JSONABLE with type t := t
+  end
+
   module Highlight : sig
     type t =
       | Error [@name "error"]
@@ -46,7 +55,7 @@ module Map_node_options : sig
   type t =
     | Basic of {
         display : string;
-        selectable : bool option;
+        controls : Controls.t list option;
         highlight : Highlight.t option;
         extras : Map_node_extra.t list option;
       } [@name "basic"]
